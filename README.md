@@ -87,7 +87,7 @@ All final expression matrices used in downstream analysis are provided in:
 - Each read is assigned fractionally across all compatible loci using the  
   `-M --fraction` mode of **featureCounts**  
 
-Both versions are provided for transparency and reproducibility.
+Both versions are provided for transparency and reproducibility. We used unique.
 
 ---
 ## **Reproducible environments**
