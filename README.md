@@ -71,11 +71,25 @@ These include heatmaps, boxplots, violins, UMAPs, and more.
 
 ## Precomputed expression matrices
 
-All final expression matrices used in downstream analysis are provided in:
-```
-/data/expression_tables_unique/
-/data/expression_tables_fraction/
-```
+Large log2(TPM+1) matrices, including all cell lines
+and all genes, are **not stored in this GitHub repository** due to file size limits.
+
+All full expression tables are publicly available on Zenodo:
+
+Unique: https://zenodo.org/records/17737378?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6Ijg1YjIxNTVkLWM2ZWQtNDIzYi1iNDhmLWVhOTI3NzBkZmQ5ZSIsImRhdGEiOnt9LCJyYW5kb20iOiJlMTc4ODViNjAwOTA3M2ZhYzU3YzA4NmYzZjNkNDRlOCJ9.I3nnfYKHHoCCaYYHlVHU8gSiyuQqPVnKE2XPV1e4HDsLvr10becwCCx-r3Rjveesgr8Lg2EcaEPHhzxUQSdmDw
+
+Fraction: https://zenodo.org/records/17737415?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6ImUyMjQ1YmQyLTlhOTYtNDRmYi04MWFlLWEyYTdjMWEyOTJiZSIsImRhdGEiOnt9LCJyYW5kb20iOiJkZWNiNzUyYjZkMzU2NDMyYTdlYmUwYTNlZDZmYjhmZSJ9.qoxbjGtNZA_mAXKF-KtF9edZdB5Aa_EVVz8txbvlafrBUKjvtK_MX590zDHCAjneGH1xoH_EEOrgXll-SYiCug
+
+After downloading the Zenodo archives, place the extracted expression tables
+into the following directories:
+
+- **Unique expression tables →** `data/expression_tables_unique/`
+- **Fraction expression tables →** `data/expression_tables_fraction/`
+
+The analysis scripts in `scripts/` and all R/Python notebooks expect the data
+to be located exactly in these directories. If the folders do not exist,
+create them manually before placing the files.
+
 ### Unique vs Fraction (what they mean)
 
 **unique**  
