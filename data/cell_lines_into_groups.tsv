@@ -1,0 +1,69 @@
+cell_line	group_by_malignancy	group_by_tumor_type	group_by_metastatic_score
+U-2197	malignant	fibrosarcoma	1_primary_tumor
+U-698-M	malignant	haematologic	2_lymph_node_metastasis
+U-937	malignant	haematologic	3_distant_metastasis
+Reh	malignant	haematologic	1_primary_tumor
+RPMI-8226	malignant	haematologic	1_primary_tumor
+NB4	malignant	haematologic	1_primary_tumor
+THP-1	malignant	haematologic	1_primary_tumor
+U-266/70	malignant	haematologic	1_primary_tumor
+U-266/84	malignant	haematologic	1_primary_tumor
+MOLT-4	malignant	haematologic	1_primary_tumor
+Karpas-707	malignant	haematologic	1_primary_tumor
+Daudi	malignant	haematologic	1_primary_tumor
+K-562	malignant	haematologic	1_primary_tumor
+HAP1	malignant	haematologic	1_primary_tumor
+HMC-1	malignant	haematologic	1_primary_tumor
+Jurkat	malignant	haematologic	1_primary_tumor
+HL-60	malignant	haematologic	1_primary_tumor
+HEL	malignant	haematologic	1_primary_tumor
+HDLM-2	malignant	haematologic	3_distant_metastasis
+fHDF/TERT166	non_malignant	non_malignant	0_non_malignant
+BJ hTERT+ SV40 Large T+ RasG12V	non_malignant	non_malignant	0_non_malignant
+BJ1-hTERT	non_malignant	non_malignant	0_non_malignant
+BJ hTERT+ SV40 Large T+	non_malignant	non_malignant	0_non_malignant
+BJ [Human fibroblast]	non_malignant	non_malignant	0_non_malignant
+ASC52telo	non_malignant	non_malignant	0_non_malignant
+ASC diff	non_malignant	non_malignant	0_non_malignant
+AF22	non_malignant	non_malignant	0_non_malignant
+HUVEC/TERT2	non_malignant	non_malignant	0_non_malignant
+HHSteC	non_malignant	non_malignant	0_non_malignant
+TIME	non_malignant	non_malignant	0_non_malignant
+U2OS	malignant	fibrosarcoma	1_primary_tumor
+Rh30	malignant	fibrosarcoma	3_distant_metastasis
+SuSa	malignant		1_primary_tumor
+NTERA-2	malignant		1_primary_tumor
+MCF-7	malignant	epithelial_carcinoma	3_distant_metastasis
+SK-BR-3	malignant	epithelial_carcinoma	3_distant_metastasis
+SCLC-21H	malignant	epithelial_carcinoma	3_distant_metastasis
+RT-4	malignant	epithelial_carcinoma	1_primary_tumor
+PC-3	malignant	epithelial_carcinoma	3_distant_metastasis
+OE19	malignant	epithelial_carcinoma	1_primary_tumor
+SK-MEL-30	malignant	epithelial_carcinoma	3_distant_metastasis
+T-47D	malignant	epithelial_carcinoma	3_distant_metastasis
+A-431	malignant	epithelial_carcinoma	1_primary_tumor
+WM115	malignant	epithelial_carcinoma	1_primary_tumor
+EFO-21	malignant	epithelial_carcinoma	3_distant_metastasis
+Capan-2	malignant	epithelial_carcinoma	1_primary_tumor
+Caco-2	malignant	epithelial_carcinoma	1_primary_tumor
+BeWo	malignant	epithelial_carcinoma	3_distant_metastasis
+AN3-CA	malignant	epithelial_carcinoma	2_lymph_node_metastasis
+A-549	malignant	epithelial_carcinoma	1_primary_tumor
+Hep-G2	malignant	epithelial_carcinoma	1_primary_tumor
+HeLa	malignant	epithelial_carcinoma	1_primary_tumor
+SiHa	malignant	epithelial_carcinoma	1_primary_tumor
+RPTEC/TERT1	non_malignant	non_malignant	0_non_malignant
+hTCEpi	non_malignant	non_malignant	0_non_malignant
+hTEC/SVTERT24-B	non_malignant	non_malignant	0_non_malignant
+hTERT-HME1	non_malignant	non_malignant	0_non_malignant
+HBEC3-KT	non_malignant	non_malignant	0_non_malignant
+HaCaT	non_malignant	non_malignant	0_non_malignant
+HEK293	non_malignant	non_malignant	0_non_malignant
+hTERT-RPE1	non_malignant	non_malignant	0_non_malignant
+LHCN-M2	non_malignant	non_malignant	0_non_malignant
+HSkMC	non_malignant	non_malignant	0_non_malignant
+U-138MG	malignant	neuronal_glial	1_primary_tumor
+U-251MG	malignant	neuronal_glial	1_primary_tumor
+U-87MG ATCC	malignant	neuronal_glial	1_primary_tumor
+GaMG	malignant	neuronal_glial	1_primary_tumor
+SH-SY5Y	malignant	neuronal_glial	3_distant_metastasis

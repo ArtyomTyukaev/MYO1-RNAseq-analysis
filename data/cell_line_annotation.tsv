@@ -1,0 +1,69 @@
+cell_line	tissue	num_biological_replicates	num_technical_replicates	organ_source	tissue_origin	cell_type	cell_type_specified	malignant (0-no; 1-yes)	cancer (0-no; 1-yes)	haematologic malignancy (0-no; 1-yes)	fibroma/sarcoma (0-no; 1-yes)	neuronal/glial tumour (0-no; 1-yes)	metastatic score (0-non-malignant; 1-primary source; 2-lymph nodes/secondary lymphoid; 3-distant metastasis)
+U-2197	Subcutis	2	2	soft tissues	connective tissue	fibroma	malignant fibrous histiocytoma	1	0.0	0.0	1.0	0.0	1.0
+U-698-M	Tonsil	4	10	tonsil	connective tissue	haematologic malignancy	B lymphoblastic lymphoma	1	0.0	1.0	0.0	0.0	2.0
+U-937	Pleural effusion	4	8	pleural effusion	connective tissue	haematologic malignancy	histiocytic lymphoma	1	0.0	1.0	0.0	0.0	3.0
+Reh	Peripheral blood	2	3	peripheral blood	connective tissue	haematologic malignancy	ALL	1	0.0	1.0	0.0	0.0	1.0
+RPMI-8226	Peripheral blood	2	2	peripheral blood	connective tissue	haematologic malignancy	plasmacytoma	1	0.0	1.0	0.0	0.0	1.0
+NB4	Bone marrow	2	2	bone marrow	connective tissue	haematologic malignancy	APML	1	0.0	1.0	0.0	0.0	1.0
+THP-1	Peripheral blood	2	4	peripheral blood	connective tissue	haematologic malignancy	AML	1	0.0	1.0	0.0	0.0	1.0
+U-266/70	Peripheral blood	2	4	peripheral blood?	connective tissue	haematologic malignancy	multiple myeloma	1	0.0	1.0	0.0	0.0	1.0
+U-266/84	Peripheral blood	2	6	peripheral blood?	connective tissue	haematologic malignancy	multiple myeloma	1	0.0	1.0	0.0	0.0	1.0
+MOLT-4	Peripheral blood	2	3	peripheral blood	connective tissue	haematologic malignancy	T cell ALL	1	0.0	1.0	0.0	0.0	1.0
+Karpas-707	Bone marrow	2	2	peripheral blood?	connective tissue	haematologic malignancy	multiple myeloma	1	0.0	1.0	0.0	0.0	1.0
+Daudi	Peripheral blood	2	4	peripheral blood	connective tissue	haematologic malignancy	Burkitt's lymphoma	1	0.0	1.0	0.0	0.0	1.0
+K-562	Pleural effusion	2	4	bone marrow	connective tissue	haematologic malignancy	CML	1	0.0	1.0	0.0	0.0	1.0
+HAP1	Bone marrow	2	2	primary	connective tissue	haematologic malignancy	CML	1	0.0	1.0	0.0	0.0	1.0
+HMC-1	Peripheral blood	2	3	peripheral blood	connective tissue	haematologic malignancy	mast cell leukemia	1	0.0	1.0	0.0	0.0	1.0
+Jurkat	Peripheral blood	2	4	peripheral blood	connective tissue	haematologic malignancy	T-ALL	1	0.0	1.0	0.0	0.0	1.0
+HL-60	Peripheral blood	2	2	peripheral blood	connective tissue	haematologic malignancy	APML	1	0.0	1.0	0.0	0.0	1.0
+HEL	Peripheral blood	2	3	peripheral blood	connective tissue	haematologic malignancy	AML M6 erythroleukemia	1	0.0	1.0	0.0	0.0	1.0
+HDLM-2	Pleural effusion	1	3	pleural effusion	connective tissue	haematologic malignancy	Hodgkin lymphoma	1	0.0	1.0	0.0	0.0	3.0
+fHDF/TERT166	Foreskin	2	2	foreskin	connective tissue	normal	normal fibroblasts	0	0.0	0.0	0.0	0.0	0.0
+BJ hTERT+ SV40 Large T+ RasG12V	Foreskin	2	2	foreskin	connective tissue	normal	normal fibroblasts	0	0.0	0.0	0.0	0.0	0.0
+BJ1-hTERT	Foreskin	2	2	foreskin	connective tissue	normal	normal fibroblasts	0	0.0	0.0	0.0	0.0	0.0
+BJ hTERT+ SV40 Large T+	Foreskin	2	2	foreskin	connective tissue	normal	normal fibroblasts	0	0.0	0.0	0.0	0.0	0.0
+BJ [Human fibroblast]	Foreskin	2	2	foreskin	connective tissue	normal	normal fibroblasts	0	0.0	0.0	0.0	0.0	0.0
+ASC52telo	Adipose	2	2	adipose	connective tissue	normal	normal MSC	0	0.0	0.0	0.0	0.0	0.0
+ASC diff	Adipose	2	2	adipose	connective tissue	normal	normal MSC	0	0.0	0.0	0.0	0.0	0.0
+AF22	Skin	2	4	iPSC	connective tissue	normal	normal iPSC	0	0.0	0.0	0.0	0.0	0.0
+HUVEC/TERT2	Umbilical vein	2	2	umbilical cord	connective tissue	normal	normal endothelium	0	0.0	0.0	0.0	0.0	0.0
+HHSteC	Liver	2	2	primary???	connective tissue	normal	pericyte	0	0.0	0.0	0.0	0.0	0.0
+TIME	Foreskin	1	2	dermal microvascular endothelium; foreskin	connective tissue	normal	normal endothelium	0	0.0	0.0	0.0	0.0	0.0
+U2OS	Bone	4	8	bone	connective tissue	sarcoma	osteosarcoma	1	0.0	0.0	1.0	0.0	1.0
+Rh30	Bone marrow	2	3	bone metastasis	connective tissue	sarcoma	alveolar rhabdomyosarcoma	1	0.0	0.0	1.0	0.0	3.0
+SuSa	Testis	2	4	testicular teratoma	embryonic tissue	germ cell tumour	testicular germ cell tumor	1	0.0	0.0	0.0	0.0	1.0
+NTERA-2	Lung	2	3	testis	embryonic tissue	germ cell tumour	embryonal carcinoma (teratocarcinoma)	1	0.0	0.0	0.0	0.0	1.0
+MCF-7	Pleural effusion	2	2	pleural effusion	epithelium	carcinoma	adenocarcinoma of mammary gland	1	1.0	0.0	0.0	0.0	3.0
+SK-BR-3	Pleural effusion	2	2	pleural effusion	epithelium	carcinoma	adenocarcinoma of mammary gland	1	1.0	0.0	0.0	0.0	3.0
+SCLC-21H	Pleural effusion	2	2	pleural effusion	epithelium	carcinoma	small cell lung carcinoma	1	1.0	0.0	0.0	0.0	3.0
+RT-4	Urinary bladder	2	4	bladder	epithelium	carcinoma	transitional cell papilloma 	1	1.0	0.0	0.0	0.0	1.0
+PC-3	Bone	2	2	bone metastasis	epithelium	carcinoma	prostatic adenocarcinoma	1	1.0	0.0	0.0	0.0	3.0
+OE19	Esophagus	2	4	primary tumor	epithelium	carcinoma	esophageal adenocarcinoma	1	1.0	0.0	0.0	0.0	1.0
+SK-MEL-30	Skin	2	5	subcutis metastasis	epithelium	carcinoma	melanoma	1	1.0	0.0	0.0	0.0	3.0
+T-47D	Pleural effusion	2	2	pleural effusion	epithelium	carcinoma	adenocarcinoma of mammary gland	1	1.0	0.0	0.0	0.0	3.0
+A-431	Skin	2	6	skin, epidermoid carcinoma	epithelium	carcinoma	epidermoid carcinoma	1	1.0	0.0	0.0	0.0	1.0
+WM115	Skin	2	2	primary tumor?	epithelium	carcinoma	melanoma	1	1.0	0.0	0.0	0.0	1.0
+EFO-21	Ascites	2	6	ascitic fluid	epithelium	carcinoma	ovary cystadenocarcinoma	1	1.0	0.0	0.0	0.0	3.0
+Capan-2	Pancreas	2	2	pancreas	epithelium	carcinoma	pancreatic adenocarcinoma	1	1.0	0.0	0.0	0.0	1.0
+Caco-2	Colon	2	2	large intestine	epithelium	carcinoma	colon adenocarcenoma	1	1.0	0.0	0.0	0.0	1.0
+BeWo	Brain	2	2	cerebral metastasis	epithelium	carcinoma	choriocarcinoma	1	1.0	0.0	0.0	0.0	3.0
+AN3-CA	Lymph node	2	2	lymph node	epithelium	carcinoma	endometrial adenocarcinoma	1	1.0	0.0	0.0	0.0	2.0
+A-549	Lung	2	2	lung	epithelium	carcinoma	lung adenocarcinoma	1	1.0	0.0	0.0	0.0	1.0
+Hep-G2	Liver	2	4	liver	epithelium	carcinoma	hepatocellular carcinoma	1	1.0	0.0	0.0	0.0	1.0
+HeLa	Cervix	2	4	cervix	epithelium	carcinoma	cervical adenocarcinoma	1	1.0	0.0	0.0	0.0	1.0
+SiHa	Cervix	1	2	uterus; cervix	epithelium	carcinoma	squamous cell carcinoma	1	1.0	0.0	0.0	0.0	1.0
+RPTEC/TERT1	Kidney	2	2	kidney, adult	epithelium	normal	kidney epithelium	0	0.0	0.0	0.0	0.0	0.0
+hTCEpi	Eye	2	2	cornea	epithelium	normal	normal corneal epithelium	0	0.0	0.0	0.0	0.0	0.0
+hTEC/SVTERT24-B	Thymus	2	2	tymus	epithelium	normal	normal tymic epithelium	0	0.0	0.0	0.0	0.0	0.0
+hTERT-HME1	Breast	2	2	mammary gland	epithelium	normal	normal epithelium	0	0.0	0.0	0.0	0.0	0.0
+HBEC3-KT	Bronchus	2	2	bronchus	epithelium	normal	normal epithelium	0	0.0	0.0	0.0	0.0	0.0
+HaCaT	Skin	2	3	skin	epithelium	normal	normal keratinocyte	0	0.0	0.0	0.0	0.0	0.0
+HEK293	Fetal kidney	2	2	kidney, embryonic	epithelium	normal	kidney epithelium	0	0.0	0.0	0.0	0.0	0.0
+hTERT-RPE1	Eye	2	4	retina	epithelium	normal	normal pigmented epithelium	0	0.0	0.0	0.0	0.0	0.0
+LHCN-M2	Muscle	2	2	muscle	muscle	normal	normal myoblasts	0	0.0	0.0	0.0	0.0	0.0
+HSkMC	Muscle	2	2	primary	muscle	normal	normal skeletal muscle cells	0	0.0	0.0	0.0	0.0	0.0
+U-138MG	Brain	2	2	brain	nervous tissue	glioblastoma	glioblastoma	1	0.0	0.0	0.0	1.0	1.0
+U-251MG	Brain	2	6	brain	nervous tissue	glioblastoma	glioblastoma	1	0.0	0.0	0.0	1.0	1.0
+U-87MG ATCC	Brain	2	2	brain	nervous tissue	glioblastoma	glioma	1	0.0	0.0	0.0	1.0	1.0
+GaMG	Brain	2	4	primary tumor	nervous tissue	glioblastoma	glioblastoma	1	0.0	0.0	0.0	1.0	1.0
+SH-SY5Y	Bone marrow	2	2	bone marrow	nervous tissue	neuroblastoma	neuroblastoma	1	0.0	0.0	0.0	1.0	3.0
