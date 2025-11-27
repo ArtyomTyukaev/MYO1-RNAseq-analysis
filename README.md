@@ -108,7 +108,7 @@ conda env create -f envs/python_analysis_environment.yml
 ```
 
 ---
-## **Reproducible environments**
+## **How to reproduce the pipeline**
 1. Run preprocessing scripts sequentially
 ```
 scripts/1_fasterq_SSD.sh
