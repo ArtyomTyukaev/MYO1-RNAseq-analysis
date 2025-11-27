@@ -1,0 +1,1008 @@
+---
+title: "R_plots"
+output: html_document
+date: "2025-11-27"
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(tibble)
+library(readr)
+library(uwot)
+library(ggplot2)
+library(tidyverse)
+```
+
+This script generates a barplot for a single gene (GENE_OF_INTEREST),
+showing its expression across cell lines:
+- Each bar = mean log2(TPM + 1) per cell line
+- Error bars = standard error (SE) across replicates (SRRs) for that cell line
+- Jittered black points = individual replicate values (log2(TPM + 1))
+Cell lines are ordered by decreasing mean expression.
+
+In the GitHub repository, all raw metadata and annotation files are stored
+under ../data/, while expression tables and plots are in the current project
+directory.
+```{r}
+GENE_OF_INTEREST <- 'MYO1A'
+
+# --- 0. Paths and output folders ---
+expr_file   <- "../data/expression_tables_unique/log2(TPM+1)_exps.tsv"
+sra_meta_fn <- "../data/GSE240542_SraRunTable.csv"
+# out_dir     <- "pics/to_article"
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+# --- 1. Table of genes of interest (MYO1 family) ---
+GENE_MAP_OF_INTEREST <- tibble(
+  GeneName = c("MYO1A", "MYO1B", "MYO1C", "MYO1D", "MYO1E", "MYO1F", "MYO1G", "MYO1H"),
+  GeneID   = c("ENSG00000166866.13", "ENSG00000128641.19", "ENSG00000197879.17", 
+               "ENSG00000176658.17", "ENSG00000157483.9", "ENSG00000142347.21", 
+               "ENSG00000136286.16", "ENSG00000174527.11")
+)
+
+annot <- readr::read_tsv("../data/cell_line_annotation.tsv") %>%
+  dplyr::select(cell_line) %>%
+  distinct()
+
+# Extract Ensembl ID for the gene of interest (e.g. MYO1A)
+MYO1A_ID <- GENE_MAP_OF_INTEREST %>%
+  filter(GeneName == GENE_OF_INTEREST) %>%
+  pull(GeneID)
+
+# --- 2. Load expression table (log2(TPM+1) per gene × SRR) ---
+expr_table <- readr::read_tsv(expr_file)
+
+# --- 3. Load meta-information: SRR → cell_line mapping ---
+sra_meta <- readr::read_csv(sra_meta_fn) %>%
+  transmute(SRR = Run, cell_line)
+
+# --- 4. Long-format for the gene of interest only ---
+expr_myo1a_long <- expr_table %>%
+  filter(Geneid == MYO1A_ID) %>%
+  pivot_longer(
+    cols = starts_with("SRR"),
+    names_to  = "SRR",
+    values_to = "logTPM"
+  ) %>%
+  left_join(sra_meta, by = "SRR") %>%
+  filter(!is.na(cell_line)) %>%
+  semi_join(annot, by = "cell_line")   # keep only cell lines present in the annotation table
+
+# --- 5. Summary statistics per cell line: mean and SE of log2(TPM+1) ---
+summary_stats <- expr_myo1a_long %>%
+  group_by(cell_line) %>%
+  summarise(
+    mean_logTPM = mean(logTPM, na.rm = TRUE),
+    se_logTPM   = sd(logTPM, na.rm = TRUE) / sqrt(dplyr::n()),
+    .groups = "drop"
+  )
+
+# --- 6. Order cell lines by decreasing mean expression ---
+cell_order <- summary_stats %>%
+  arrange(desc(mean_logTPM)) %>%
+  pull(cell_line)
+
+summary_stats <- summary_stats %>%
+  mutate(cell_line = factor(cell_line, levels = cell_order))
+
+expr_myo1a_long <- expr_myo1a_long %>%
+  mutate(cell_line = factor(cell_line, levels = cell_order))
+
+library(ggplot2)
+
+# Single-color palette for bars
+bar_fill    <- "#B0B0B0"   # light grey
+bar_outline <- "black"
+
+# Compute maximum point value and add a small top margin
+ymax <- max(expr_myo1a_long$logTPM, na.rm = TRUE) 
+top_ident <- (ymax/20)
+ymax <- ymax + top_ident
+# Round up to the nearest grid step (0.1)
+ymax <- ceiling(ymax * 10) / 10   # e.g., 0.83 → 0.9
+# Small negative offset below zero to avoid bars “sitting” exactly on the axis
+y_bottom_border <- -(ymax/100)
+# Define step size based on range
+y_step_size <- (ymax + y_bottom_border)/5
+
+p_myo1a <- ggplot() +
+  # Bars = mean per cell line, uniform fill and thin outline
+  geom_col(
+    data  = summary_stats,
+    aes(x = cell_line, y = mean_logTPM),
+    fill  = bar_fill,
+    color = bar_outline,
+    width = 0.9,
+    size  = 0.4
+  ) +
+  # Error bars = SE around the mean
+  geom_errorbar(
+    data = summary_stats,
+    aes(
+      x    = cell_line,
+      ymin = mean_logTPM - se_logTPM,
+      ymax = mean_logTPM + se_logTPM
+    ),
+    width = 0.2,
+    size  = 0.25
+  ) +
+  # Points = individual replicate values (SRR-level log2(TPM+1)) with small horizontal jitter
+  geom_point(
+    data = expr_myo1a_long,
+    aes(x = cell_line, y = logTPM),
+    position = position_jitter(width = 0.15, height = 0),
+    alpha    = 0.5,
+    size     = 0.01
+  ) +
+  labs(
+    title = GENE_OF_INTEREST,
+    x     = NULL,              # no x-axis label (typical for figure panels)
+    y     = "log2(TPM + 1)"
+  ) +
+  # Clean base theme
+  theme_classic(base_size = 8) +
+  scale_y_continuous(
+    limits = c(y_bottom_border, (ymax + top_ident)),
+    breaks = seq(0, (ymax + top_ident), y_step_size),   # control number and position of ticks
+    labels = function(x) sprintf("%.1f", x),            # one decimal place
+    expand = c(0, 0)                                    # no extra expansion beyond limits
+  ) +
+  theme(
+    legend.position   = "none",
+
+    # x-axis text: small, rotated labels for cell lines
+    axis.text.x       = element_text(
+      size  = 5,
+      angle = 90,
+      vjust = 0.5,
+      hjust = 1
+    ),
+    axis.text.y       = element_text(size = 6),
+
+    # y-axis title
+    axis.title.y      = element_text(size = 8, face = "plain"),
+
+    # title above the panel
+    plot.title        = element_text(size = 9, face = "bold", hjust = 0.5),
+
+    # ticks and axes: thin lines for a “journal” look
+    axis.ticks        = element_line(size = 0.25),
+    axis.ticks.length = unit(2, "pt"),
+
+    # axis lines: thin
+    axis.line         = element_line(size = 0.3)
+  )
+
+# --- 8. Save plot with width scaled to the number of cell lines ---
+n_lines     <- n_distinct(expr_myo1a_long$cell_line)
+plot_width  <- max(5, n_lines * 0.1)   # compact width, scaled with number of cell lines
+plot_height <- 4                       # short panel height suitable for figure subpanels
+
+out_file <- file.path(out_dir, paste0(GENE_OF_INTEREST, "_logTPM_by_cell_line_nature_style.png"))
+# ggsave(
+#   filename = out_file,
+#   plot     = p_myo1a,
+#   width    = plot_width,
+#   height   = plot_height,
+#   dpi      = 600,     
+#   units    = "in"
+# )
+
+p_myo1a
+
+```
+
+This script generates stratified boxplots of log2(TPM+1) expression for selected MYO1 genes across three biological groups of connective tissue cell lines:
+
+Non-malignant
+
+Primary tumor
+
+Metastasizing
+
+Each facet represents one gene, each boxplot shows the expression distribution within a group, and jittered points represent expression values of individual cell lines.
+Pairwise group differences are tested using Mann–Whitney U tests, and statistically significant comparisons are annotated with lines and asterisks (*, **, ***).
+This plot is used to visualize whether a gene is differentially expressed across tumor progression states.
+
+```{r}
+# ---- 0. Genes of interest ----
+# Mapping MYO1-family gene names to Ensembl IDs
+GENE_MAP_OF_INTEREST <- tibble(
+  GeneName = c("MYO1A", "MYO1B", "MYO1C", "MYO1D", "MYO1E", "MYO1F", "MYO1G", "MYO1H"),
+  GeneID   = c("ENSG00000166866.13", "ENSG00000128641.19", "ENSG00000197879.17", 
+               "ENSG00000176658.17", "ENSG00000157483.9", "ENSG00000142347.21", 
+               "ENSG00000136286.16", "ENSG00000174527.11")
+)
+GENES_ENSG_ID <- GENE_MAP_OF_INTEREST$GeneID
+
+# Select which genes to plot in the upper row
+genes_high <- c("MYO1H")
+
+# Plotting parameters
+y_max <- 0.9
+step_ylim <- 0.2
+y_down_border <- -0.04
+step_between_boxplot_and_lines <- 0.1
+step_between_lines <- 0.06
+
+gene_str <- genes_high
+
+# ---- 1. Cell line annotation ----
+# Load metadata and map numeric groups to human-readable labels
+annot <- readr::read_delim("../data/cell_line_annotation_update.csv", delim = ";")
+
+annot <- annot %>%
+  rename(
+    connective = `connective (0-not applicable , 1-non-malignant, 2-primary, 3-metastasing)`
+  ) %>%
+  filter(connective %in% c(1, 2, 3)) %>%
+  mutate(
+    connective = factor(
+      connective,
+      levels = c(1, 2, 3),
+      labels = c("1_non_malignant", "2_primary", "3_metastasing")
+    )
+  )
+
+# ---- 2. Expression matrix (log2(TPM+1) averaged per cell line) ----
+expr_table <- readr::read_tsv("../data/expression_tables_unique/log2(TPM+1)_mean_cell_lines.tsv")
+
+# Keep only MYO1 genes and attach gene symbols
+expr_sub <- expr_table %>%
+  filter(Geneid %in% GENES_ENSG_ID) %>%
+  left_join(GENE_MAP_OF_INTEREST, by = c("Geneid" = "GeneID")) %>%
+  relocate(GeneName, .before = Geneid)
+
+# ---- 3. Long format ----
+df_long <- expr_sub %>%
+  pivot_longer(
+    cols      = -c(GeneName, Geneid, gene_name),
+    names_to  = "cell_line",
+    values_to = "log2TPM1"
+  )
+
+# ---- 4. Add tumor-group annotation ----
+df_long_conn <- df_long %>%
+  inner_join(
+    annot %>% dplyr::select(cell_line, connective),
+    by = "cell_line"
+  ) %>%
+  mutate(
+    connective = factor(
+      connective,
+      levels = c("1_non_malignant", "2_primary", "3_metastasing"),
+      labels = c("Non-malignant", "Primary tumor", "Metastasizing")
+    )
+  )
+
+# Color palette for tumor groups
+palette_use <- c(
+  "Non-malignant" = "#4CAF50",
+  "Primary tumor" = "#FFB300",
+  "Metastasizing" = "#E53935"
+)
+
+group_levels <- levels(df_long_conn$connective)
+
+# ---- 5. Pairwise MWU tests per gene ----
+# Generates comparisons for all group pairs (3 choose 2 = 3 tests)
+all_pairs <- t(combn(group_levels, 2)) %>%
+  as.data.frame() %>%
+  rename(group1 = V1, group2 = V2)
+
+stat_pairs <- df_long_conn %>%
+  group_by(GeneName) %>%
+  do({
+    d <- .
+    if (nrow(all_pairs) == 0) return(tibble())
+    
+    purrr::map_dfr(1:nrow(all_pairs), function(i) {
+      g1 <- all_pairs$group1[i]
+      g2 <- all_pairs$group2[i]
+      
+      v1 <- d$log2TPM1[d$connective == g1]
+      v2 <- d$log2TPM1[d$connective == g2]
+      
+      if (length(v1) < 2 || length(v2) < 2) {
+        return(NULL)
+      }
+      
+      tibble(
+        GeneName = unique(d$GeneName),
+        group1   = g1,
+        group2   = g2,
+        p_value  = wilcox.test(v1, v2)$p.value
+      )
+    })
+  }) %>%
+  ungroup()
+
+# Add significance labels and plotting coordinates
+if (nrow(stat_pairs) > 0) {
+  base_y <- df_long_conn %>%
+    group_by(GeneName) %>%
+    summarise(
+      base_y = max(log2TPM1, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  stat_pairs <- stat_pairs %>%
+    group_by(GeneName) %>%
+    mutate(
+      p_adj = p.adjust(p_value, method = "BH"),
+      label = case_when(
+        p_adj < 0.001 ~ "***",
+        p_adj < 0.01  ~ "**",
+        p_adj < 0.05  ~ "*",
+        TRUE          ~ ""
+      )
+    ) %>%
+    filter(label != "") %>%
+    left_join(base_y, by = "GeneName") %>%
+    mutate(
+      pair_index = row_number(),
+      y_pos      = base_y + step_between_boxplot_and_lines + step_between_lines * (pair_index - 1),
+      x1   = as.numeric(factor(group1, levels = group_levels)),
+      x2   = as.numeric(factor(group2, levels = group_levels)),
+      x_mid = (x1 + x2) / 2
+    ) %>%
+    ungroup()
+}
+
+# ---- 6. Plot for selected genes ----
+df_high <- df_long_conn %>%
+  filter(GeneName %in% genes_high) %>%
+  mutate(
+    GeneName = factor(GeneName, levels = genes_high)
+  )
+
+stat_high <- stat_pairs %>%
+  filter(GeneName %in% genes_high)
+
+p_high <- ggplot(
+  df_high,
+  aes(
+    x     = connective,
+    y     = log2TPM1,
+    fill  = connective,
+    color = connective
+  )
+) +
+  geom_boxplot(
+    outlier.shape = NA,
+    width = 0.6,
+    alpha = 0.5,
+    color = "black"
+  ) +
+  geom_jitter(
+    position = position_jitter(width = 0.15),
+    size = 0.6,
+    alpha = 1
+  ) +
+  scale_fill_manual(values = palette_use) +
+  scale_color_manual(values = palette_use) +
+  {
+    if (exists("stat_high") && nrow(stat_high) > 0) {
+      list(
+        geom_segment(
+          data = stat_high,
+          aes(x = x1, xend = x2, y = y_pos, yend = y_pos),
+          inherit.aes = FALSE
+        ),
+        geom_text(
+          data = stat_high,
+          aes(x = x_mid, y = y_pos + 0.01, label = label),
+          inherit.aes = FALSE,
+          vjust = 0,
+          size = 2.7
+        )
+      )
+    } else list()
+  } +
+  facet_wrap(~ GeneName, nrow = 1, scales = "fixed") +
+  coord_cartesian(ylim = c(y_down_border, y_max)) +
+  theme_bw(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(size=12, angle = 50, hjust = 1, face = 'bold'),
+    panel.grid = element_blank(),
+    axis.title.x = element_blank(),
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 30)
+  ) +
+  labs(
+    title = NULL,
+    x     = NULL,
+    y     = NULL
+  ) +
+  scale_y_continuous(
+    limits = c(y_down_border, y_max),
+    breaks = seq(0, y_max, by = step_ylim),
+    labels = function(x) sprintf("%.1f", x)
+  )
+
+filename_out <- paste0("pics/to_article/", gene_str, "_boxplots_connective.png")
+ggsave(
+  filename = filename_out,
+  plot = p_high,
+  width = 3.25, height = 5.20, dpi = 600
+)
+
+p_high
+
+```
+
+This script generates boxplots for epithelial cell line groups:
+- Each facet = one MYO1 gene (selected via `genes_high`)
+- Each boxplot = distribution of log2(TPM+1) across epithelial groups
+  (Non-malignant, Primary tumor, Metastasizing)
+- Jittered points = individual cell lines
+- Significant pairwise differences (Mann–Whitney U test) are shown
+  with horizontal lines and asterisks.
+  
+```{r}
+# ---- 0. Genes of interest (MYO1 family) ----
+GENE_MAP_OF_INTEREST <- tibble(
+  GeneName = c("MYO1A", "MYO1B", "MYO1C", "MYO1D", "MYO1E", "MYO1F", "MYO1G", "MYO1H"),
+  GeneID   = c("ENSG00000166866.13", "ENSG00000128641.19", "ENSG00000197879.17", 
+               "ENSG00000176658.17", "ENSG00000157483.9", "ENSG00000142347.21", 
+               "ENSG00000136286.16", "ENSG00000174527.11")
+)
+GENES_ENSG_ID <- GENE_MAP_OF_INTEREST$GeneID
+
+# Select which genes to plot
+# genes_high <- c("MYO1B", "MYO1C", "MYO1D", "MYO1E")
+genes_high <- c("MYO1H")
+y_max <- 0.5
+step_ylim <- 0.1
+y_down_border <- -0.01
+step_between_boxplot_and_lines <- 0.3
+step_between_lines <- 0.4
+
+gene_str <- genes_high
+
+# ---- 1. Cell line annotation (epithelial grouping) ----
+annot <- readr::read_delim("../data/cell_line_annotation_update.csv", delim = ";")
+
+annot <- annot %>%
+  # Rename epithelial classification column
+  rename(
+    connective = `epithelial (0-not applicable , 1-non-malignant, 2-primary, 3-metastasing)`
+  ) %>%
+  # Keep only groups 1/2/3
+  filter(connective %in% c(1, 2, 3)) %>%
+  mutate(
+    connective = factor(
+      connective,
+      levels = c(1, 2, 3),
+      labels = c("1_non_malignant", "2_primary", "3_metastasing")
+    )
+  )
+
+# ---- 2. Expression matrix (log2(TPM+1) per cell line) ----
+expr_table <- readr::read_tsv("../data/expression_tables_unique/log2(TPM+1)_mean_cell_lines.tsv")
+
+# Keep only genes of interest and attach gene symbols
+expr_sub <- expr_table %>%
+  filter(Geneid %in% GENES_ENSG_ID) %>%
+  left_join(GENE_MAP_OF_INTEREST, by = c("Geneid" = "GeneID")) %>%
+  relocate(GeneName, .before = Geneid)
+
+# ---- 3. Long format: (GeneName, cell_line, log2TPM1) ----
+df_long <- expr_sub %>%
+  pivot_longer(
+    cols      = -c(GeneName, Geneid, gene_name),
+    names_to  = "cell_line",
+    values_to = "log2TPM1"
+  )
+
+# ---- 4. Add epithelial group (connective) per cell line ----
+df_long_conn <- df_long %>%
+  inner_join(
+    annot %>% dplyr::select(cell_line, connective),
+    by = "cell_line"
+  )
+df_long_conn <- df_long_conn %>%
+  mutate(
+    connective = factor(
+      connective,
+      levels = c("1_non_malignant", "2_primary", "3_metastasing"),
+      labels = c("Non-malignant", "Primary tumor", "Metastasizing")
+    )
+  )
+
+# Color palette for the three epithelial groups
+palette_use <- c(
+  "Non-malignant" = "#4CAF50",
+  "Primary tumor" = "#FFB300",
+  "Metastasizing" = "#E53935"
+)
+
+# Levels order on the x-axis
+group_levels <- levels(df_long_conn$connective)
+
+# ---- 5. Pairwise Mann–Whitney U-tests for each gene ----
+all_pairs <- t(combn(group_levels, 2)) %>%
+  as.data.frame() %>%
+  rename(group1 = V1, group2 = V2)
+
+stat_pairs <- df_long_conn %>%
+  group_by(GeneName) %>%
+  do({
+    d <- .
+    if (nrow(all_pairs) == 0) return(tibble())
+    
+    purrr::map_dfr(1:nrow(all_pairs), function(i) {
+      g1 <- all_pairs$group1[i]
+      g2 <- all_pairs$group2[i]
+      
+      v1 <- d$log2TPM1[d$connective == g1]
+      v2 <- d$log2TPM1[d$connective == g2]
+      
+      # Require at least 2 points in each group
+      if (length(v1) < 2 || length(v2) < 2) {
+        return(NULL)
+      }
+      
+      tibble(
+        GeneName = unique(d$GeneName),
+        group1   = g1,
+        group2   = g2,
+        p_value  = wilcox.test(v1, v2)$p.value
+      )
+    })
+  }) %>%
+  ungroup()
+
+if (nrow(stat_pairs) > 0) {
+  # Baseline y-position for significance lines per gene
+  base_y <- df_long_conn %>%
+    group_by(GeneName) %>%
+    summarise(
+      base_y = max(log2TPM1, na.rm = TRUE),
+      .groups = "drop"
+    )
+  
+  stat_pairs <- stat_pairs %>%
+    group_by(GeneName) %>%
+    mutate(
+      p_adj = p.adjust(p_value, method = "BH"),
+      label = case_when(
+        p_adj < 0.001 ~ "***",
+        p_adj < 0.01  ~ "**",
+        p_adj < 0.05  ~ "*",
+        TRUE          ~ ""
+      )
+    ) %>%
+    filter(label != "") %>%  # keep only significant comparisons
+    left_join(base_y, by = "GeneName") %>%
+    mutate(
+      pair_index = row_number(),
+      # vertical position of each significance line
+      y_pos      = base_y + step_between_boxplot_and_lines + step_between_lines * (pair_index - 1),
+      x1   = as.numeric(factor(group1, levels = group_levels)),
+      x2   = as.numeric(factor(group2, levels = group_levels)),
+      x_mid = (x1 + x2) / 2
+    ) %>%
+    ungroup()
+}
+
+# ===== 6A. Plot for selected genes (epithelial groups) =====
+df_high <- df_long_conn %>%
+  filter(GeneName %in% genes_high) %>%
+  mutate(
+    GeneName = factor(GeneName, levels = genes_high)
+  )
+
+stat_high <- stat_pairs %>%
+  filter(GeneName %in% genes_high)
+
+p_high <- ggplot(
+  df_high,
+  aes(
+    x     = connective,
+    y     = log2TPM1,
+    fill  = connective,
+    color = connective
+  )
+) +
+  geom_boxplot(
+    outlier.shape = NA,
+    width = 0.6,
+    alpha = 0.5,
+    color = "black"
+  ) +
+  geom_jitter(
+    position = position_jitter(width = 0.15),
+    size = 0.6,
+    alpha = 1
+  ) +
+  scale_fill_manual(values = palette_use) +
+  scale_color_manual(values = palette_use) +
+  {
+    if (exists("stat_high") && nrow(stat_high) > 0) {
+      list(
+        geom_segment(
+          data = stat_high,
+          aes(x = x1, xend = x2, y = y_pos, yend = y_pos),
+          inherit.aes = FALSE
+        ),
+        geom_text(
+          data = stat_high,
+          aes(x = x_mid, y = y_pos + 0.01, label = label),
+          inherit.aes = FALSE,
+          vjust = 0,
+          size = 2.7
+        )
+      )
+    } else {
+      list()
+    }
+  } +
+  facet_wrap(~ GeneName, nrow = 1, scales = "fixed") +
+  coord_cartesian(ylim = c(y_down_border, y_max)) +
+  theme_bw(base_size = 10) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(size=12, angle = 50, hjust = 1, face = 'bold'),
+    panel.grid = element_blank(),
+    axis.title.x = element_blank(),
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 30)
+  ) +
+  labs(
+    title = NULL,
+    x     = NULL,
+    y     = NULL
+  ) +
+  scale_y_continuous(
+    limits = c(y_down_border, y_max),
+    breaks = seq(0, y_max, by = step_ylim),
+    labels = function(x) sprintf("%.1f", x)
+  )
+
+filename_out <- paste0("pics/to_article/", gene_str, "_boxplots_epithelial.png")
+ggsave(
+  filename = filename_out,
+  plot = p_high,
+  width = 3.25, height = 5.20, dpi = 600
+)
+
+p_high
+
+```
+
+This figure shows a clustered heatmap of MYO1 gene expression across all cell lines included in the study.
+The values represent log2(TPM + 1) averaged per cell line.
+Rows correspond to cell lines, columns correspond to MYO1 family genes (MYO1A–MYO1H).
+```{r}
+library(tidyverse)
+library(pheatmap)
+
+# --- 1. Input tables ---
+# Expression matrix (log2(TPM+1) averaged by cell line)
+expr_table <- readr::read_tsv("../data/expression_tables_unique/log2(TPM+1)_mean_cell_lines.tsv")
+
+# Cell line annotation (used to filter which lines to include)
+annot <- readr::read_delim("../data/cell_line_annotation_update.csv", delim = ";")
+
+# Keep only cell lines that appear in the annotation table
+keep_lines <- intersect(colnames(expr_table), annot$cell_line)
+
+# --- 2. MYO1 genes of interest ---
+GENE_MAP_OF_INTEREST <- tibble(
+  GeneName = c("MYO1A", "MYO1B", "MYO1C", "MYO1D", "MYO1E", "MYO1F", "MYO1G", "MYO1H"),
+  GeneID   = c("ENSG00000166866.13", "ENSG00000128641.19", "ENSG00000197879.17",
+               "ENSG00000176658.17", "ENSG00000157483.9", "ENSG00000142347.21",
+               "ENSG00000136286.16", "ENSG00000174527.11")
+)
+GENES_ENSG_ID <- GENE_MAP_OF_INTEREST$GeneID
+
+# --- 3. Filter only genes of interest and attach gene symbols ---
+expr_myo <- expr_table %>%
+  filter(Geneid %in% GENES_ENSG_ID) %>%
+  left_join(GENE_MAP_OF_INTEREST, by = c("Geneid" = "GeneID")) %>%
+  relocate(GeneName, .before = gene_name)
+
+# --- 4. Build expression matrix for heatmap ---
+# Rows = cell lines, columns = MYO1 genes
+mat <- expr_myo %>%
+  dplyr::select(GeneName, everything(), -Geneid, -gene_name) %>%
+  pivot_longer(
+    cols = -GeneName,
+    names_to = "cell_line",
+    values_to = "expr"
+  ) %>%
+  pivot_wider(names_from = GeneName, values_from = expr) %>%
+  column_to_rownames("cell_line") %>%
+  as.matrix()
+
+# Reorder rows to match annotation
+mat <- mat[keep_lines, , drop = FALSE]
+
+# --- 5. Color palette for heatmap (white → blue → dark blue) ---
+my_palette <- colorRampPalette(c("white", "#9ecae1", "#08519c"))(200)
+
+# --- 6. Draw heatmap ---
+# Clustermap of MYO1 gene expression across annotated cell lines
+p <- pheatmap::pheatmap(
+  mat,
+  color = my_palette,
+  cluster_rows = TRUE,
+  cluster_cols = TRUE,
+  treeheight_row = 20,   # reduce dendrogram height (rows)
+  treeheight_col = 7,    # reduce dendrogram height (columns)
+  fontsize_row = 9,
+  fontsize_col = 12,
+  main = "MYO1 gene expression (log2(TPM+1))",
+  fontsize = 14,
+  border_color = "white"
+)
+
+# --- 7. Save heatmap ---
+filename_out <- "pics/to_article/heatmap.png"
+ggsave(
+  filename = filename_out,
+  plot = p$gtable,
+  width = 8, height = 12, dpi = 600
+)
+
+p
+
+```
+UMAP visualization of MYO1 gene expression across cell lines.
+Each point represents a cell line, colored by tumor type.
+UMAP is computed from log2(TPM+1) of MYO1A–MYO1H genes.
+Labels show exact cell-line names.
+```{r}
+# ============================================================
+# UMAP visualization of MYO1 gene expression across cell lines.
+# Each point represents a cell line, colored by tumor type.
+# UMAP is computed from log2(TPM+1) of MYO1A–MYO1H genes.
+# Labels show exact cell-line names.
+# ============================================================
+
+library(readr)
+library(dplyr)
+library(tidyr)
+library(umap)
+library(ggrepel)
+
+# Color palette for tumor-type groups
+cols_tt <- c(
+  epithelial_carcinoma = "red",
+  haematologic         = "#4CAF50",
+  fibrosarcoma         = "#1E88E5",
+  neuronal_glial       = "#8E24AA",
+  non_malignant        = "gray"
+)
+
+# --- Load expression table (log2(TPM+1) averaged by cell line) ---
+expr_table <- readr::read_tsv("../data/expression_tables_unique/log2(TPM+1)_mean_cell_lines.tsv")
+
+# Select MYO1 gene family
+myo_genes <- c("MYO1A","MYO1B","MYO1C","MYO1D","MYO1E","MYO1F","MYO1G","MYO1H")
+expr_table <- expr_table %>%
+    filter(gene_name %in% myo_genes)
+
+# Prepare expression matrix (genes × cell lines)
+expr_mat <- expr_table %>%
+  dplyr::select(-Geneid, -gene_name) %>% 
+  as.matrix()
+
+# Transpose: now rows = cell lines, columns = genes
+expr_mat_t <- t(expr_mat)
+
+# Load metadata with tumor-type grouping
+meta <- cell_groups %>%
+  dplyr::select(cell_line, group_by_tumor_type)
+
+# Match metadata order with expression matrix
+meta <- meta[match(rownames(expr_mat_t), meta$cell_line), ]
+
+# Remove cell lines without tumor-type annotation
+keep_idx <- !is.na(meta$group_by_tumor_type) & meta$group_by_tumor_type != "nan"
+expr_mat_t <- expr_mat_t[keep_idx, ]
+meta <- meta[keep_idx, ]
+
+# --- Run UMAP ---
+set.seed(42)
+reducer <- umap(
+  expr_mat_t,
+  n_neighbors = 7,
+  min_dist = 0.15,
+  metric = "euclidean",
+  n_components = 2
+)
+
+# Convert UMAP coordinates to data frame
+umap_df <- as.data.frame(reducer$layout)
+colnames(umap_df) <- c("UMAP1", "UMAP2")
+umap_df$cell_line <- rownames(expr_mat_t)
+
+# Join with metadata
+plot_df <- umap_df %>%
+  left_join(meta, by = "cell_line")
+
+library(ggplot2)
+
+# --- Plot UMAP with labels ---
+p <- ggplot(plot_df, aes(UMAP1, UMAP2, color = group_by_tumor_type)) +
+  geom_point(size = 3, alpha = 0.9) +
+  geom_text_repel(
+    aes(label = cell_line),
+    color = "black",
+    size = 1,
+    max.overlaps = Inf,
+    direction = "both",
+    segment.size = 0.4,
+    segment.alpha = 0.8,
+    box.padding = 0.45,
+    point.padding = 0.3,
+    min.segment.length = 0,
+    force = 6,
+    force_pull = 0.5,
+    seed = 442
+  ) +
+  scale_color_manual(values = cols_tt) +
+  theme_bw(base_size = 12) +
+  labs(
+    title = "UMAP by log2(TPM+1)",
+    color = "Tumor type"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "right",
+    panel.grid = element_blank()
+  )
+
+# --- Save plot ---
+ggsave(
+  filename = "pics/to_article/UMAP_logTPM_with_labels_all_genes.png",
+  plot = p,
+  width = 8, height = 6, dpi = 600
+)
+
+p
+
+```
+
+UMAP visualization using expression of ALL genes
+(log2(TPM+1) averaged per cell line).
+Each point is a cell line colored by tumor type.
+Labels are intentionally not shown in this version.
+```{r}
+# Load averaged log2(TPM+1) expression matrix
+expr_table <- readr::read_tsv("../data/expression_tables_unique/log2(TPM+1)_mean_cell_lines.tsv")
+
+# Define MYO genes (not used here; all genes are kept)
+myo_genes <- c("MYO1A","MYO1B","MYO1C","MYO1D","MYO1E","MYO1F","MYO1G","MYO1H")
+
+# Convert expression table to matrix (genes × cell lines)
+expr_mat <- expr_table %>%
+  dplyr::select(-Geneid, -gene_name) %>% 
+  as.matrix()
+
+# Transpose so rows = cell lines, columns = genes
+expr_mat_t <- t(expr_mat)
+
+# Load metadata with tumor-type annotation
+meta <- cell_groups %>%
+  dplyr::select(cell_line, group_by_tumor_type)
+
+# Match order of metadata to expression matrix
+meta <- meta[match(rownames(expr_mat_t), meta$cell_line), ]
+
+# Remove cell lines without tumor-type annotation
+keep_idx <- !is.na(meta$group_by_tumor_type) & meta$group_by_tumor_type != "nan"
+expr_mat_t <- expr_mat_t[keep_idx, ]
+meta <- meta[keep_idx, ]
+
+# Run UMAP
+set.seed(42)
+reducer <- umap(
+  expr_mat_t,
+  n_neighbors = 7,
+  min_dist = 0.15,
+  metric = "euclidean",
+  n_components = 2
+)
+
+# Prepare UMAP dataframe
+umap_df <- as.data.frame(reducer$layout)
+colnames(umap_df) <- c("UMAP1", "UMAP2")
+umap_df$cell_line <- rownames(expr_mat_t)
+
+plot_df <- umap_df %>%
+  left_join(meta, by = "cell_line")
+
+library(ggplot2)
+
+# UMAP plot without text labels
+p <- ggplot(plot_df, aes(UMAP1, UMAP2, color = group_by_tumor_type)) +
+  geom_point(size = 3, alpha = 0.9) +
+  scale_color_manual(values = cols_tt) +
+  theme_bw(base_size = 12) +
+  labs(
+    title = "UMAP by log2(TPM+1)",
+    color = "Tumor type"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "right",
+    panel.grid = element_blank()
+  )
+
+# Save to file
+ggsave(
+  filename = "pics/to_article/UMAP_logTPM_without_labels_all_genes.png",
+  plot = p,
+  width = 8, height = 6, dpi = 600
+)
+
+p
+
+```
+
+
+Violin + boxplot visualization of MYO1 gene expression
+across all cell lines (log2(TPM+1), averaged per line).
+Each violin represents the distribution of expression values
+across cell lines for a given MYO1 gene.
+```{r}
+# --- 1. Load expression matrix (any metric type) ---
+expr_matrix <- readr::read_tsv("../data/expression_tables_unique/log2(TPM+1)_mean_cell_lines.tsv")
+
+# --- 2. Keep only MYO1 genes and attach clean gene symbols ---
+myo_only <- expr_matrix %>%
+  dplyr::filter(Geneid %in% GENES_ENSG_ID) %>%
+  dplyr::select(-gene_name) %>%   # drop previous gene name column
+  dplyr::left_join(
+    GENE_MAP_OF_INTEREST,
+    by = c("Geneid" = "GeneID")
+  ) %>%
+  dplyr::relocate(GeneName, .after = Geneid)
+
+# --- 3. Convert to long format ---
+df_long <- myo_only %>%
+  tidyr::pivot_longer(
+    cols = -c(Geneid, GeneName),
+    names_to = "cell_line",
+    values_to = "log2_TPM_plus_1"   # renamed column for clarity
+  )
+
+# --- 4. Violin + boxplot visualization ---
+p <- ggplot(df_long, aes(x = GeneName, y = log2_TPM_plus_1, fill = GeneName)) +
+  geom_violin(trim = FALSE, alpha = 0.5) +        # distribution shape
+  geom_boxplot(width = 0.5, outlier.size = 0.5, alpha = 0.5) +  # median + IQR
+  theme_bw(base_size = 13) +
+  theme(
+    legend.position = "none",
+    panel.grid = element_blank()
+  ) +
+  labs(
+    title = "Violin Plot of MYO1 Gene Expression",
+    x = "Gene",
+    y = "log2(TPM + 1)"
+  )
+
+# --- 5. Save figure ---
+ggsave(
+  filename = "pics/to_article/MYO1_violin_plot.png",
+  plot = p,
+  width = 8, height = 5, dpi = 600
+)
+
+p
+
+```
+
+
+
+
+
+
+
+
+
+
+
